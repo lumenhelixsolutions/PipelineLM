@@ -1,0 +1,112 @@
+/**
+ * PipelineLM Pro — Shared Constants
+ */
+
+// ─── Artifact Types ───
+export const ARTIFACT_TYPES = {
+  AUDIO: 'audio',
+  VIDEO: 'video',
+  SLIDE_DECK: 'slide_deck',
+  REPORT: 'report',
+  MIND_MAP: 'mind_map'
+};
+
+export const ARTIFACT_LABELS = {
+  audio: 'Audio Overview',
+  video: 'Video Overview',
+  slide_deck: 'Slide Deck',
+  report: 'Report',
+  mind_map: 'Mind Map'
+};
+
+export const TYPE_ICONS = {
+  audio: 'fa-microphone',
+  video: 'fa-video',
+  slide_deck: 'fa-file-powerpoint',
+  report: 'fa-file-alt',
+  mind_map: 'fa-brain'
+};
+
+// ─── Prefab Templates (Prompt Library) ───
+export const PREFABS = [
+  {
+    id: 'deep-dive',
+    name: 'Deep Dive',
+    icon: 'fa-microscope',
+    description: 'Comprehensive analysis with examples and expert perspectives',
+    template: 'Create a comprehensive deep-dive analysis of "{topic}" for {audience}. Cover all key aspects, controversies, and future implications. Include specific examples, case studies, and expert perspectives. Structure the response with clear sections and actionable takeaways.'
+  },
+  {
+    id: 'exec-summary',
+    name: 'Executive Summary',
+    icon: 'fa-chart-line',
+    description: 'Concise summary with key findings and recommendations',
+    template: 'Provide a concise executive summary of "{topic}" for {audience}. Include: (1) Key findings from the sources, (2) Strategic recommendations, (3) Actionable next steps, (4) Risk assessment. Keep under 500 words. Use bullet points where appropriate.'
+  },
+  {
+    id: 'compare',
+    name: 'Compare & Contrast',
+    icon: 'fa-code-compare',
+    description: 'Compare viewpoints, agreements and disagreements',
+    template: 'Compare and contrast the main viewpoints on "{topic}" presented in the sources for {audience}. Create a structured comparison highlighting: (1) Areas of agreement, (2) Key disagreements, (3) Unique perspectives from each source, (4) Areas where more research is needed. Use a table format where helpful.'
+  },
+  {
+    id: 'faq',
+    name: 'FAQ Generation',
+    icon: 'fa-circle-question',
+    description: 'Generate FAQ with detailed answers from sources',
+    template: 'Generate a list of 10 frequently asked questions about "{topic}" for {audience}, with detailed answers based on the provided sources. Format each Q&A clearly. Include both basic and advanced questions. Cite specific sources for each answer where possible.'
+  },
+  {
+    id: 'timeline',
+    name: 'Timeline Creation',
+    icon: 'fa-timeline',
+    description: 'Chronological timeline with citations',
+    template: 'Create a chronological timeline of events related to "{topic}" for {audience}. Cite specific dates and sources for each milestone. Include context for why each event matters. Format as a clear timeline with dates on the left and descriptions on the right.'
+  },
+  {
+    id: 'critical',
+    name: 'Critical Analysis',
+    icon: 'fa-scale-balanced',
+    description: 'Evaluate strengths, weaknesses, biases and gaps',
+    template: 'Provide a critical analysis of "{topic}" for {audience}. Evaluate: (1) Strengths of the arguments presented, (2) Weaknesses or limitations, (3) Any biases in the sources, (4) Gaps in the research, (5) Alternative viewpoints not covered. Be balanced and evidence-based.'
+  }
+];
+
+// ─── Storage Keys ───
+export const STORAGE_KEYS = {
+  artifacts: 'plm_artifacts',
+  notebooks: 'plm_notebooks',
+  folders: 'plm_folders',
+  prompts: 'plm_prompts',
+  settings: 'plm_settings',
+  session: 'plm_session',
+  syncQueue: 'plm_syncQueue',
+  pendingSources: 'plm_pendingSources',
+  exportHistory: 'plm_exportHistory',
+  darkMode: 'plm_darkMode'
+};
+
+// ─── Message Actions ───
+export const MSG_ACTIONS = {
+  // Artifacts
+  ARTIFACTS_DISCOVERED: 'artifacts:discovered',
+  ARTIFACT_DOWNLOAD: 'artifact:download',
+  ARTIFACT_STORE: 'artifact:store',
+  ARTIFACT_DELETE: 'artifact:delete',
+  VAULT_SYNCED: 'vault:synced',
+  // Notebooks
+  NOTEBOOK_DETECTED: 'notebook:detected',
+  NOTEBOOKS_DISCOVERED: 'notebooks:discovered',
+  // Sync
+  BULK_IMPORT: 'bulkImport',
+  SYNC_EXTERNAL: 'syncExternal',
+  DOWNLOAD_URL: 'downloadUrl',
+  // Config
+  SAVE_PROMPTS: 'savePrompts',
+  GET_PROMPTS: 'getPrompts',
+  SAVE_FOLDERS: 'saveFolders',
+  GET_FOLDERS: 'getFolders',
+  SET_THEME: 'setTheme',
+  GET_THEME: 'getTheme'
+};

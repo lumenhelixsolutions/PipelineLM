@@ -1,0 +1,71 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [3.0.0] - 2025-05-20
+
+### Added
+
+- **9 Studio Item Types** - Generate Audio Overviews, Video Overviews, Reports, Quizzes, Flashcards, Slide Decks, Mind Maps, Data Tables, and Infographics with full configuration (format, length, style, difficulty, voice)
+- **AI Prompt Suggestions** - Auto-detect topic, audience, and recommended format from notebook sources with confidence scores
+- **Study Mode** - Interactive quizzes with scoring and flashcards with flip, rate, and shuffle
+- **Audio Player** - Built-in player with progress tracking and MP3 download
+- **Bulk Source Adder** - Import URLs, YouTube playlists, RSS feeds, open browser tabs, and webpage links
+- **Search Everything** - Cross-library search with type filters (sources, notebooks, tags, URLs)
+- **Move Sources Between Notebooks** - Copy or move with compatibility preview
+- **Merge Sources** - Combine multiple sources into one with size validation
+- **Source Freshness Checker** - Detect stale sources with bulk refresh
+- **Duplicate Finder** - Levenshtein-based title similarity detection with batch delete
+- **Backup/Restore** - JSON export/import of all extension data
+- **Tag System** - Color-coded tags with search and filter
+- **Multi-Account Switching** - Link multiple Google accounts with color-coded avatars
+- **Language Toggle** - 20 languages with floating widget
+- **Dark Mode** - Full dark theme with system-aware toggle
+- **Folder Manager** - Create folders, drag & drop notebooks, filter by folder
+- **Prompt Library** - 8 default prompts with shortcodes (`/`), keyboard shortcuts, import/export
+- **Context Menu** - Right-click any page to send to NotebookLM
+- **External Sync** - Import from Reddit threads, Google Docs, Claude chats
+- **Export Chat** - PDF, Markdown, JSON, and plain text export
+- **Keyboard Shortcuts** - `Ctrl+Shift+P` (prompts), `Ctrl+Shift+G` (generator), `Ctrl+Shift+S` (side panel)
+- **Live Progress Tracking** - Real-time progress bars for all generation operations
+- **Cancel Anytime** - Abort generation mid-process
+
+### Security
+
+- All processing is client-side (zero external API calls)
+- No data collection or tracking
+- Per-account data isolation
+- Minimal permission model
+
+## [2.0.0] - 2025-05-15
+
+### Added
+
+- Complete rewrite with 7-tab side panel (Dashboard, Vault, Pipeline, Folders, Prompts, Sync, Settings)
+- AI Prompt Suggestions with topic detection and audience inference
+- Folder management with drag & drop
+- Prompt library with 6 default templates
+- Dark mode support
+- Context menus for external sync
+- Export tools (PDF, Markdown, JSON, Text)
+
+### Fixed
+
+- Context menu duplicate ID errors on extension update
+- Service worker missing message handlers
+- Content script stale DOM reference issues
+- Manifest file reference mismatches
+
+## [1.0.0] - 2025-05-10
+
+### Added
+
+- Initial release
+- Basic artifact scraping and storage
+- Fleet sync for notebook management
+- Simple dashboard with stat cards
+- Floating toolbar with quick actions
+- Onboarding flow

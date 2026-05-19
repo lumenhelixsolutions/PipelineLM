@@ -1,0 +1,262 @@
+#!/usr/bin/env node
+/**
+ * PipelineLM Pro — File Reference Validator
+ * Ensures all internal file references are valid
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const SRC_DIR = path.resolve(__dirname, '../src');
+
+let errors = 0;
+let warnings = 0;
+
+// ─── Helpers ────────────────────────────────────────────────────────
+
+function log(level, message) {
+  const prefix = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : '✅';
+  console.log(`${prefix} ${message}`);
+  if (level === 'error') errors++;
+  if (level === 'warn') warnings++;
+}
+
+function scanFiles(dir, pattern) {
+  const results = [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...scanFiles(fullPath, pattern));
+    } else if (pattern.test(entry.name)) {
+      results.push(fullPath);
+    }
+  }
+  return results;
+}
+
+function extractRelativePaths(content, regex, groupIndex = 1) {
+  const paths = [];
+  let match;
+  while ((match = regex.exec(content)) !== null) {
+    paths.push(match[groupIndex]);
+  }
+  return [...new Set(paths)];
+}
+
+// ─── Validators ─────────────────────────────────────────────────────
+
+function validateHTMLRefs() {
+  console.log('\n📄 HTML File References');
+  const htmlFiles = scanFiles(SRC_DIR, /\.html$/);
+
+  for (const htmlFile of htmlFiles) {
+    const content = fs.readFileSync(htmlFile, 'utf8');
+    const relPath = path.relative(SRC_DIR, htmlFile);
+
+    // CSS references
+    const cssRefs = extractRelativePaths(content, /href="(\.\.?\/[^"]+\.css)"/g);
+    for (const ref of cssRefs) {
+      const resolved = path.resolve(path.dirname(htmlFile), ref);
+      if (!fs.existsSync(resolved)) {
+        log('error', `${relPath} → CSS not found: ${ref}`);
+      } else {
+        log('ok', `${relPath} → CSS OK: ${ref}`);
+      }
+    }
+
+    // JS references
+    const jsRefs = extractRelativePaths(content, /src="(\.\.?\/[^"]+\.js)"/g);
+    for (const ref of jsRefs) {
+      const resolved = path.resolve(path.dirname(htmlFile), ref);
+      if (!fs.existsSync(resolved)) {
+        log('error', `${relPath} → JS not found: ${ref}`);
+      } else {
+        log('ok', `${relPath} → JS OK: ${ref}`);
+      }
+    }
+
+    // Image/icon references
+    const imgRefs = extractRelativePaths(content, /(?:src|href)="(\.\.?\/[^"]*\.(?:png|jpg|jpeg|svg|ico|gif))"/g);
+    for (const ref of imgRefs) {
+      const resolved = path.resolve(path.dirname(htmlFile), ref);
+      if (!fs.existsSync(resolved)) {
+        log('warn', `${relPath} → Image not found: ${ref}`);
+      } else {
+        log('ok', `${relPath} → Image OK: ${ref}`);
+      }
+    }
+  }
+}
+
+function validateCSSRefs() {
+  console.log('\n🎨 CSS File References');
+  const cssFiles = scanFiles(SRC_DIR, /\.css$/);
+
+  for (const cssFile of cssFiles) {
+    const content = fs.readFileSync(cssFile, 'utf8');
+    const relPath = path.relative(SRC_DIR, cssFile);
+
+    // url() references
+    const urlRefs = extractRelativePaths(content, /url\(['"]?(.+?)['"]?\)/g);
+    for (const ref of urlRefs) {
+      if (ref.startsWith('data:') || ref.startsWith('#')) continue;
+      const resolved = path.resolve(path.dirname(cssFile), ref);
+      if (!fs.existsSync(resolved)) {
+        log('warn', `${relPath} → url() not found: ${ref}`);
+      } else {
+        log('ok', `${relPath} → url() OK: ${ref}`);
+      }
+    }
+  }
+}
+
+function validateJSRefs() {
+  console.log('\n⚙️ JS File References');
+  const jsFiles = scanFiles(SRC_DIR, /\.js$/);
+
+  for (const jsFile of jsFiles) {
+    const content = fs.readFileSync(jsFile, 'utf8');
+    const relPath = path.relative(SRC_DIR, jsFile);
+
+    // Check for hardcoded paths that might break
+    const hardcodedPaths = extractRelativePaths(content, /['"](\/[^'"]+(?:\.js|\.css|\.html|\.json))['"]/g);
+    for (const ref of hardcodedPaths) {
+      log('warn', `${relPath} → Hardcoded absolute path: ${ref}`);
+    }
+
+    // Check chrome.runtime.getURL references
+    const runtimeRefs = extractRelativePaths(content, /chrome\.runtime\.getURL\(['"]([^'"]+)['"]\)/g);
+    for (const ref of runtimeRefs) {
+      const resolved = path.join(SRC_DIR, ref);
+      if (!fs.existsSync(resolved)) {
+        log('error', `${relPath} → getURL path not found: ${ref}`);
+      } else {
+        log('ok', `${relPath} → getURL OK: ${ref}`);
+      }
+    }
+  }
+}
+
+function validateManifestRefs() {
+  console.log('\n📋 Manifest File References');
+  const manifestPath = path.join(SRC_DIR, 'manifest.json');
+  if (!fs.existsSync(manifestPath)) {
+    log('error', 'manifest.json not found');
+    return;
+  }
+
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+
+  // Icons
+  if (manifest.icons) {
+    for (const [size, iconPath] of Object.entries(manifest.icons)) {
+      const resolved = path.join(SRC_DIR, iconPath);
+      if (!fs.existsSync(resolved)) {
+        log('error', `manifest.json → Icon ${size}x${size} not found: ${iconPath}`);
+      } else {
+        log('ok', `manifest.json → Icon ${size}x${size} OK`);
+      }
+    }
+  }
+
+  // Background script
+  if (manifest.background?.service_worker) {
+    const resolved = path.join(SRC_DIR, manifest.background.service_worker);
+    if (!fs.existsSync(resolved)) {
+      log('error', `manifest.json → Service worker not found`);
+    } else {
+      log('ok', `manifest.json → Service worker OK`);
+    }
+  }
+
+  // Content scripts
+  if (manifest.content_scripts) {
+    for (const cs of manifest.content_scripts) {
+      for (const js of cs.js || []) {
+        const resolved = path.join(SRC_DIR, js);
+        if (!fs.existsSync(resolved)) {
+          log('error', `manifest.json → Content script not found: ${js}`);
+        } else {
+          log('ok', `manifest.json → Content script OK: ${js}`);
+        }
+      }
+      for (const css of cs.css || []) {
+        const resolved = path.join(SRC_DIR, css);
+        if (!fs.existsSync(resolved)) {
+          log('error', `manifest.json → Content CSS not found: ${css}`);
+        } else {
+          log('ok', `manifest.json → Content CSS OK: ${css}`);
+        }
+      }
+    }
+  }
+
+  // Side panel
+  if (manifest.side_panel?.default_path) {
+    const resolved = path.join(SRC_DIR, manifest.side_panel.default_path);
+    if (!fs.existsSync(resolved)) {
+      log('error', `manifest.json → Side panel not found`);
+    } else {
+      log('ok', `manifest.json → Side panel OK`);
+    }
+  }
+}
+
+function validateLocaleMessages() {
+  console.log('\n🌐 Locale Message References');
+  const localesDir = path.join(SRC_DIR, '_locales');
+  if (!fs.existsSync(localesDir)) return;
+
+  const locales = fs.readdirSync(localesDir);
+  for (const locale of locales) {
+    const messagesPath = path.join(localesDir, locale, 'messages.json');
+    if (!fs.existsSync(messagesPath)) {
+      log('warn', `Missing messages.json for locale: ${locale}`);
+      continue;
+    }
+
+    try {
+      const messages = JSON.parse(fs.readFileSync(messagesPath, 'utf8'));
+      const keys = Object.keys(messages);
+      log('ok', `Locale "${locale}": ${keys.length} message(s)`);
+
+      for (const key of keys) {
+        if (!messages[key].message) {
+          log('error', `Locale "${locale}": "${key}" missing "message" field`);
+        }
+      }
+    } catch (e) {
+      log('error', `Locale "${locale}": Invalid JSON`);
+    }
+  }
+}
+
+// ─── Main ───────────────────────────────────────────────────────────
+
+function main() {
+  console.log('🔗 PipelineLM Pro — File Reference Validator\n');
+
+  if (!fs.existsSync(SRC_DIR)) {
+    console.error(`❌ Source directory not found: ${SRC_DIR}`);
+    process.exit(1);
+  }
+
+  validateManifestRefs();
+  validateHTMLRefs();
+  validateCSSRefs();
+  validateJSRefs();
+  validateLocaleMessages();
+
+  console.log(`\n${'─'.repeat(50)}`);
+  if (errors === 0 && warnings === 0) {
+    console.log('✅ All references valid!');
+  } else {
+    console.log(`Errors: ${errors} | Warnings: ${warnings}`);
+  }
+  console.log(`${'─'.repeat(50)}\n`);
+
+  process.exit(errors > 0 ? 1 : 0);
+}
+
+main();

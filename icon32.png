@@ -1,0 +1,210 @@
+/**
+ * PipelineLM Pro — Studio Configuration
+ * Defines all studio item types, parameters, languages, formats, and options.
+ */
+
+// ═══════════════════════════════════════════════════════════════
+//  STUDIO ITEM TYPES (9 types)
+// ═══════════════════════════════════════════════════════════════
+export const STUDIO_TYPES = [
+  {
+    id: 'audio',
+    name: 'Audio Overview',
+    icon: '🎙️',
+    faIcon: 'fa-microphone',
+    color: '#6366f1',
+    description: 'Generate a podcast-style audio deep-dive from your sources.',
+    params: [
+      { key: 'format', label: 'Format', type: 'select', options: [{value:'podcast',label:'Two-Host Podcast'},{value:'narrative',label:'Narrative Story'},{value:'interview',label:'Expert Interview'},{value:'news',label:'News Briefing'}], default: 'podcast' },
+      { key: 'length', label: 'Duration', type: 'select', options: [{value:'brief',label:'~3 min (Brief)'},{value:'standard',label:'~10 min (Standard)'},{value:'deep',label:'~20 min (Deep Dive)'},{value:'extended',label:'~45 min (Extended)'}], default: 'standard' },
+      { key: 'style', label: 'Tone', type: 'select', options: [{value:'conversational',label:'Conversational'},{value:'professional',label:'Professional'},{value:'enthusiastic',label:'Enthusiastic'},{value:'calm',label:'Calm & Meditative'},{value:'dramatic',label:'Dramatic'}], default: 'conversational' },
+      { key: 'voice', label: 'Voice Type', type: 'select', options: [{value:'default',label:'Default'},{value:'warm',label:'Warm & Friendly'},{value:'authoritative',label:'Authoritative'},{value:'energetic',label:'Energetic'}], default: 'default' }
+    ]
+  },
+  {
+    id: 'video',
+    name: 'Video Overview',
+    icon: '🎥',
+    faIcon: 'fa-video',
+    color: '#ec4899',
+    description: 'Create a video explainer with visual synthesis from your sources.',
+    params: [
+      { key: 'format', label: 'Format', type: 'select', options: [{value:'explainer',label:'Explainer Video'},{value:'documentary',label:'Mini Documentary'},{value:'presentation',label:'Slide Presentation'},{value:'tutorial',label:'Tutorial Walkthrough'}], default: 'explainer' },
+      { key: 'length', label: 'Duration', type: 'select', options: [{value:'short',label:'~2 min (Short)'},{value:'medium',label:'~5 min (Medium)'},{value:'long',label:'~10 min (Long)'}], default: 'medium' },
+      { key: 'style', label: 'Visual Style', type: 'select', options: [{value:'clean',label:'Clean & Modern'},{value:'cinematic',label:'Cinematic'},{value:'minimal',label:'Minimalist'},{value:'colorful',label:'Colorful & Bold'}], default: 'clean' },
+      { key: 'music', label: 'Background Music', type: 'select', options: [{value:'subtle',label:'Subtle'},{value:'upbeat',label:'Upbeat'},{value:'ambient',label:'Ambient'},{value:'none',label:'None'}], default: 'subtle' }
+    ]
+  },
+  {
+    id: 'report',
+    name: 'Report / Briefing',
+    icon: '📄',
+    faIcon: 'fa-file-alt',
+    color: '#3b82f6',
+    description: 'Generate a comprehensive written report with analysis and recommendations.',
+    params: [
+      { key: 'format', label: 'Report Type', type: 'select', options: [{value:'executive',label:'Executive Summary'},{value:'analytical',label:'Analytical Report'},{value:'research',label:'Research Paper'},{value:'briefing',label:'Briefing Document'}], default: 'analytical' },
+      { key: 'length', label: 'Length', type: 'select', options: [{value:'short',label:'1-2 pages'},{value:'standard',label:'3-5 pages'},{value:'comprehensive',label:'10+ pages'},{value:'custom',label:'Custom word count'}], default: 'standard' },
+      { key: 'style', label: 'Writing Style', type: 'select', options: [{value:'formal',label:'Formal Academic'},{value:'business',label:'Business Professional'},{value:'journalistic',label:'Journalistic'},{value:'accessible',label:'Accessible / Plain Language'}], default: 'business' },
+      { key: 'sections', label: 'Include Sections', type: 'multi', options: [{value:'executive_summary',label:'Executive Summary'},{value:'methodology',label:'Methodology'},{value:'findings',label:'Key Findings'},{value:'analysis',label:'Analysis'},{value:'recommendations',label:'Recommendations'},{value:'references',label:'References'}], default: ['executive_summary','findings','analysis','recommendations'] }
+    ]
+  },
+  {
+    id: 'quiz',
+    name: 'Quiz / Assessment',
+    icon: '🧩',
+    faIcon: 'fa-question-circle',
+    color: '#f59e0b',
+    description: 'Create an interactive quiz to test comprehension of your sources.',
+    params: [
+      { key: 'format', label: 'Question Type', type: 'select', options: [{value:'mixed',label:'Mixed (MCQ + Open)'},{value:'multiple_choice',label:'Multiple Choice Only'},{value:'true_false',label:'True / False'},{value:'open_ended',label:'Open-Ended'},{value:'fill_blank',label:'Fill in the Blank'}], default: 'mixed' },
+      { key: 'length', label: 'Question Count', type: 'select', options: [{value:'5',label:'5 questions'},{value:'10',label:'10 questions'},{value:'15',label:'15 questions'},{value:'20',label:'20 questions'},{value:'custom',label:'Custom count'}], default: '10' },
+      { key: 'difficulty', label: 'Difficulty', type: 'select', options: [{value:'easy',label:'Easy (Recall)'},{value:'medium',label:'Medium (Comprehension)'},{value:'hard',label:'Hard (Analysis)'},{value:'adaptive',label:'Adaptive (Progressive)'}], default: 'medium' },
+      { key: 'style', label: 'Focus Areas', type: 'multi', options: [{value:'key_facts',label:'Key Facts'},{value:'concepts',label:'Core Concepts'},{value:'relationships',label:'Relationships & Connections'},{value:'applications',label:'Real-World Applications'},{value:'critique',label:'Critical Thinking'}], default: ['key_facts','concepts','applications'] }
+    ]
+  },
+  {
+    id: 'flashcard',
+    name: 'Flashcards',
+    icon: '🗂️',
+    faIcon: 'fa-clone',
+    color: '#10b981',
+    description: 'Generate study flashcards for spaced repetition learning.',
+    params: [
+      { key: 'format', label: 'Card Format', type: 'select', options: [{value:'term_definition',label:'Term → Definition'},{value:'question_answer',label:'Question → Answer'},{value:'concept_example',label:'Concept → Example'},{value:'cloze',label:'Cloze Deletion'}], default: 'term_definition' },
+      { key: 'length', label: 'Card Count', type: 'select', options: [{value:'10',label:'10 cards'},{value:'20',label:'20 cards'},{value:'50',label:'50 cards'},{value:'100',label:'100 cards'}], default: '20' },
+      { key: 'difficulty', label: 'Complexity', type: 'select', options: [{value:'basic',label:'Basic (Key Terms)'},{value:'intermediate',label:'Intermediate (Concepts)'},{value:'advanced',label:'Advanced (Connections)'},{value:'mixed',label:'Mixed Levels'}], default: 'mixed' },
+      { key: 'style', label: 'Study Mode', type: 'select', options: [{value:'review',label:'Standard Review'},{value:'spaced',label:'Spaced Repetition'},{value:'speed',label:'Speed Drill'},{value:'mastery',label:'Mastery Mode'}], default: 'review' }
+    ]
+  },
+  {
+    id: 'slide_deck',
+    name: 'Slide Deck',
+    icon: '📊',
+    faIcon: 'fa-file-powerpoint',
+    color: '#8b5cf6',
+    description: 'Create a presentation deck with structured slides from your sources.',
+    params: [
+      { key: 'format', label: 'Slide Type', type: 'select', options: [{value:'presentation',label:'Standard Presentation'},{value:'pitch',label:'Pitch Deck'},{value:'training',label:'Training Material'},{value:'executive',label:'Executive Brief'}], default: 'presentation' },
+      { key: 'length', label: 'Slide Count', type: 'select', options: [{value:'5',label:'5 slides'},{value:'10',label:'10 slides'},{value:'15',label:'15 slides'},{value:'20',label:'20 slides'},{value:'25',label:'25 slides'}], default: '10' },
+      { key: 'style', label: 'Design Style', type: 'select', options: [{value:'modern',label:'Modern Clean'},{value:'corporate',label:'Corporate Blue'},{value:'minimal',label:'Minimal White'},{value:'creative',label:'Creative Colorful'},{value:'dark',label:'Dark Theme'}], default: 'modern' },
+      { key: 'density', label: 'Content Density', type: 'select', options: [{value:'minimal',label:'Minimal (Bullet Points)'},{value:'standard',label:'Standard (Key Details)'},{value:'detailed',label:'Detailed (Full Content)'}], default: 'standard' }
+    ]
+  },
+  {
+    id: 'mind_map',
+    name: 'Mind Map',
+    icon: '🧠',
+    faIcon: 'fa-project-diagram',
+    color: '#06b6d4',
+    description: 'Generate a visual mind map organizing concepts and relationships.',
+    params: [
+      { key: 'format', label: 'Layout', type: 'select', options: [{value:'radial',label:'Radial (Center-Out)'},{value:'hierarchical',label:'Hierarchical (Tree)'},{value:'organic',label:'Organic (Freeform)'},{value:'flowchart',label:'Flowchart (Process)'}], default: 'radial' },
+      { key: 'depth', label: 'Depth Levels', type: 'select', options: [{value:'2',label:'2 Levels'},{value:'3',label:'3 Levels'},{value:'4',label:'4 Levels'},{value:'5',label:'5 Levels (Deep)'}], default: '3' },
+      { key: 'style', label: 'Visual Style', type: 'select', options: [{value:'colorful',label:'Color-Coded'},{value:'monochrome',label:'Monochrome'},{value:'gradient',label:'Gradient'},{value:'outline',label:'Simple Outline'}], default: 'colorful' },
+      { key: 'connect', label: 'Show Connections', type: 'select', options: [{value:'all',label:'All Relationships'},{value:'hierarchical',label:'Hierarchical Only'},{value:'cross',label:'Cross-Links Only'},{value:'key',label:'Key Connections'}], default: 'all' }
+    ]
+  },
+  {
+    id: 'data_table',
+    name: 'Data Table',
+    icon: '📋',
+    faIcon: 'fa-table',
+    color: '#f97316',
+    description: 'Extract structured data into sortable, filterable tables.',
+    params: [
+      { key: 'format', label: 'Table Type', type: 'select', options: [{value:'comparison',label:'Comparison Table'},{value:'summary',label:'Summary Statistics'},{value:'timeline',label:'Timeline / Chronology'},{value:'structured',label:'Structured Data Extract'}], default: 'comparison' },
+      { key: 'length', label: 'Row Estimate', type: 'select', options: [{value:'10',label:'~10 rows'},{value:'25',label:'~25 rows'},{value:'50',label:'~50 rows'},{value:'100',label:'~100 rows'}], default: '25' },
+      { key: 'style', label: 'Presentation', type: 'select', options: [{value:'clean',label:'Clean Grid'},{value:'compact',label:'Compact'},{value:'detailed',label:'Detailed with Notes'},{value:'export',label:'Export-Ready (CSV)'}], default: 'clean' },
+      { key: 'sortable', label: 'Interactive', type: 'select', options: [{value:'yes',label:'Sortable & Filterable'},{value:'static',label:'Static View'},{value:'export',label:'Export Only'}], default: 'yes' }
+    ]
+  },
+  {
+    id: 'infographic',
+    name: 'Infographic',
+    icon: '🎨',
+    faIcon: 'fa-palette',
+    color: '#e11d48',
+    description: 'Create a visual infographic summarizing key points and data.',
+    params: [
+      { key: 'format', label: 'Infographic Type', type: 'select', options: [{value:'statistical',label:'Statistical / Data-Driven'},{value:'process',label:'Process / Timeline'},{value:'comparison',label:'Comparison / VS'},{value:'hierarchy',label:'Hierarchy / Pyramid'},{value:'list',label:'Numbered List / Top N'}], default: 'statistical' },
+      { key: 'length', label: 'Detail Level', type: 'select', options: [{value:'minimal',label:'Minimal (5-7 points)'},{value:'standard',label:'Standard (10-15 points)'},{value:'comprehensive',label:'Comprehensive (20+ points)'}], default: 'standard' },
+      { key: 'style', label: 'Visual Theme', type: 'select', options: [{value:'modern',label:'Modern Flat'},{value:'corporate',label:'Corporate'},{value:'creative',label:'Creative Bold'},{value:'minimal',label:'Minimalist'},{value:'vintage',label:'Vintage / Retro'}], default: 'modern' },
+      { key: 'charts', label: 'Include Charts', type: 'multi', options: [{value:'bar',label:'Bar Charts'},{value:'pie',label:'Pie Charts'},{value:'line',label:'Line Charts'},{value:'flow',label:'Flow Diagrams'},{value:'icons',label:'Icon Graphics'}], default: ['bar','pie','icons'] }
+    ]
+  }
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  LANGUAGES
+// ═══════════════════════════════════════════════════════════════
+export const LANGUAGES = [
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'es', name: 'Spanish', flag: '🇪🇸' },
+  { code: 'fr', name: 'French', flag: '🇫🇷' },
+  { code: 'de', name: 'German', flag: '🇩🇪' },
+  { code: 'it', name: 'Italian', flag: '🇮🇹' },
+  { code: 'pt', name: 'Portuguese', flag: '🇵🇹' },
+  { code: 'zh', name: 'Chinese (Simplified)', flag: '🇨🇳' },
+  { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
+  { code: 'ko', name: 'Korean', flag: '🇰🇷' },
+  { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
+  { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
+  { code: 'ru', name: 'Russian', flag: '🇷🇺' },
+  { code: 'tr', name: 'Turkish', flag: '🇹🇷' },
+  { code: 'pl', name: 'Polish', flag: '🇵🇱' },
+  { code: 'nl', name: 'Dutch', flag: '🇳🇱' },
+  { code: 'sv', name: 'Swedish', flag: '🇸🇪' },
+  { code: 'th', name: 'Thai', flag: '🇹🇭' },
+  { code: 'vi', name: 'Vietnamese', flag: '🇻🇳' },
+  { code: 'id', name: 'Indonesian', flag: '🇮🇩' },
+  { code: 'he', name: 'Hebrew', flag: '🇮🇱' }
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  TAG COLORS
+// ═══════════════════════════════════════════════════════════════
+export const TAG_COLORS = [
+  { name: 'Blue', bg: '#dbeafe', text: '#1e40af', border: '#93c5fd' },
+  { name: 'Green', bg: '#d1fae5', text: '#065f46', border: '#6ee7b7' },
+  { name: 'Purple', bg: '#ede9fe', text: '#5b21b6', border: '#a78bfa' },
+  { name: 'Orange', bg: '#ffedd5', text: '#9a3412', border: '#fdba74' },
+  { name: 'Pink', bg: '#fce7f3', text: '#9d174d', border: '#f9a8d4' },
+  { name: 'Red', bg: '#fee2e2', text: '#991b1b', border: '#fca5a5' },
+  { name: 'Yellow', bg: '#fef9c3', text: '#854d0e', border: '#fde047' },
+  { name: 'Cyan', bg: '#cffafe', text: '#155e75', border: '#67e8f9' },
+  { name: 'Gray', bg: '#f3f4f6', text: '#374151', border: '#d1d5db' },
+  { name: 'Indigo', bg: '#e0e7ff', text: '#3730a3', border: '#a5b4fc' }
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  GENERATOR PROMPT TEMPLATES
+// ═══════════════════════════════════════════════════════════════
+export function buildGenerationPrompt(typeId, params, sources, customInstructions, language) {
+  const type = STUDIO_TYPES.find(t => t.id === typeId);
+  if(!type) return '';
+
+  const langPrefix = language && language !== 'en' ? `Respond in ${LANGUAGES.find(l => l.code === language)?.name || language}. ` : '';
+
+  const templates = {
+    audio: `${langPrefix}Create an Audio Overview about the following sources. Format: ${params.format || 'podcast'}. Length: ${params.length || 'standard'}. Tone: ${params.style || 'conversational'}. Voice: ${params.voice || 'default'}.\n\nSources:\n${sources.map((s,i) => `${i+1}. ${s.title}${s.snippet ? ': ' + s.snippet : ''}`).join('\n')}${customInstructions ? '\n\nAdditional instructions: ' + customInstructions : ''}`,
+
+    video: `${langPrefix}Create a Video Overview script with visual direction. Format: ${params.format || 'explainer'}. Duration: ${params.length || 'medium'}. Visual style: ${params.style || 'clean'}. Music: ${params.music || 'subtle'}.\n\nSources:\n${sources.map((s,i) => `${i+1}. ${s.title}${s.snippet ? ': ' + s.snippet : ''}`).join('\n')}${customInstructions ? '\n\nAdditional instructions: ' + customInstructions : ''}`,
+
+    report: `${langPrefix}Write a comprehensive report. Type: ${params.format || 'analytical'}. Length: ${params.length || 'standard'}. Style: ${params.style || 'business'}. Sections: ${Array.isArray(params.sections) ? params.sections.join(', ') : params.sections || 'all'}.\n\nSources:\n${sources.map((s,i) => `${i+1}. ${s.title}${s.snippet ? ': ' + s.snippet : ''}`).join('\n')}${customInstructions ? '\n\nAdditional instructions: ' + customInstructions : ''}`,
+
+    quiz: `${langPrefix}Create a quiz with ${params.length || '10'} ${params.format || 'mixed'} questions. Difficulty: ${params.difficulty || 'medium'}. Focus: ${Array.isArray(params.style) ? params.style.join(', ') : params.style || 'key facts, concepts'}.\n\nSources:\n${sources.map((s,i) => `${i+1}. ${s.title}${s.snippet ? ': ' + s.snippet : ''}`).join('\n')}${customInstructions ? '\n\nAdditional instructions: ' + customInstructions : ''}`,
+
+    flashcard: `${langPrefix}Generate ${params.length || '20'} flashcards in ${params.format || 'term_definition'} format. Complexity: ${params.difficulty || 'mixed'}. Study mode: ${params.style || 'review'}.\n\nSources:\n${sources.map((s,i) => `${i+1}. ${s.title}${s.snippet ? ': ' + s.snippet : ''}`).join('\n')}${customInstructions ? '\n\nAdditional instructions: ' + customInstructions : ''}`,
+
+    slide_deck: `${langPrefix}Create a ${params.length || '10'}-slide ${params.format || 'presentation'} deck. Design: ${params.style || 'modern'}. Content density: ${params.density || 'standard'}.\n\nSources:\n${sources.map((s,i) => `${i+1}. ${s.title}${s.snippet ? ': ' + s.snippet : ''}`).join('\n')}${customInstructions ? '\n\nAdditional instructions: ' + customInstructions : ''}`,
+
+    mind_map: `${langPrefix}Generate a mind map with ${params.depth || '3'} levels. Layout: ${params.format || 'radial'}. Style: ${params.style || 'colorful'}. Connections: ${params.connect || 'all'}.\n\nSources:\n${sources.map((s,i) => `${i+1}. ${s.title}${s.snippet ? ': ' + s.snippet : ''}`).join('\n')}${customInstructions ? '\n\nAdditional instructions: ' + customInstructions : ''}`,
+
+    data_table: `${langPrefix}Extract structured data into a ${params.format || 'comparison'} table. ~${params.length || '25'} rows. Presentation: ${params.style || 'clean'}. Interactive: ${params.sortable || 'yes'}.\n\nSources:\n${sources.map((s,i) => `${i+1}. ${s.title}${s.snippet ? ': ' + s.snippet : ''}`).join('\n')}${customInstructions ? '\n\nAdditional instructions: ' + customInstructions : ''}`,
+
+    infographic: `${langPrefix}Create an ${params.format || 'statistical'} infographic. Detail: ${params.length || 'standard'}. Theme: ${params.style || 'modern'}. Charts: ${Array.isArray(params.charts) ? params.charts.join(', ') : params.charts || 'bar, pie, icons'}.\n\nSources:\n${sources.map((s,i) => `${i+1}. ${s.title}${s.snippet ? ': ' + s.snippet : ''}`).join('\n')}${customInstructions ? '\n\nAdditional instructions: ' + customInstructions : ''}`
+  };
+
+  return templates[typeId] || templates.report;
+}

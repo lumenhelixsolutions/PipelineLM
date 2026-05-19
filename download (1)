@@ -1,0 +1,99 @@
+/* ═══════════════════════════════════════════════════════════════
+   PipelineLM Pro v3.0 — Injected Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+:root { --plm-bg: #f8f9fc; --plm-bg2: #ffffff; --plm-bg3: #f1f5f9; --plm-bg4: #e2e8f0; --plm-fg: #0f172a; --plm-fg2: #475569; --plm-fg3: #94a3b8; --plm-accent: #3b82f6; --plm-ok: #10b981; --plm-warn: #f59e0b; --plm-err: #ef4444; --plm-border: rgba(0,0,0,0.06); --plm-glass: rgba(255,255,255,0.95); --plm-radius: 10px; }
+:root[data-plm-theme="dark"] { --plm-bg: #0a0e1a; --plm-bg2: #111827; --plm-bg3: #1a2236; --plm-bg4: #242d42; --plm-fg: #e2e8f0; --plm-fg2: #94a3b8; --plm-fg3: #64748b; --plm-border: rgba(255,255,255,0.06); --plm-glass: rgba(17,24,39,0.95); }
+:root[data-plm-theme="dark"] body { background: #0a0e1a !important; }
+
+/* ─── Floating Toolbar ─── */
+#plm-toolbar { position: fixed !important; bottom: 20px !important; right: 20px !important; z-index: 99999 !important; display: flex !important; flex-direction: column !important; gap: 6px !important; align-items: flex-end !important; }
+#plm-toolbar .plm-fab { width: 48px; height: 48px; border-radius: 50%; border: none; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; font-size: 20px; cursor: pointer; box-shadow: 0 4px 20px rgba(59,130,246,0.4); transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+#plm-toolbar .plm-fab:hover { transform: scale(1.1); box-shadow: 0 6px 24px rgba(59,130,246,0.6); }
+#plm-toolbar .plm-fab.active { background: linear-gradient(135deg, #ef4444, #dc2626); }
+#plm-toolbar .plm-menu { display: none; flex-direction: column; gap: 2px; background: var(--plm-glass); backdrop-filter: blur(20px); border: 1px solid var(--plm-border); border-radius: 14px; padding: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); min-width: 220px; }
+#plm-toolbar .plm-menu.visible { display: flex !important; }
+#plm-toolbar .plm-menu-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; border: none; background: transparent; color: var(--plm-fg2); font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.15s; font-family: 'Inter', system-ui, sans-serif; }
+#plm-toolbar .plm-menu-item:hover { background: rgba(59,130,246,0.1); color: #fff; }
+#plm-toolbar .plm-menu-sep { height: 1px; background: var(--plm-border); margin: 2px 0; }
+
+/* ─── Studio Generator ─── */
+.plm-studio-type { display: flex; flex-direction: column; align-items: center; padding: 14px 8px; border-radius: var(--plm-radius); border: 2px solid var(--plm-border); background: var(--plm-bg2); cursor: pointer; transition: all 0.15s; text-align: center; }
+.plm-studio-type:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.plm-studio-type:active { transform: translateY(0); }
+
+/* ─── Form Elements ─── */
+.plm-input { width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--plm-border); background: var(--plm-bg); color: var(--plm-fg); font-size: 13px; outline: none; font-family: inherit; }
+.plm-input:focus { border-color: var(--plm-accent); }
+.plm-textarea { width: 100%; min-height: 80px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--plm-border); background: var(--plm-bg); color: var(--plm-fg); font-size: 12px; font-family: 'Fira Code', monospace; line-height: 1.5; outline: none; resize: vertical; }
+.plm-textarea:focus { border-color: var(--plm-accent); }
+.plm-form-label { font-size: 11px; font-weight: 700; color: var(--plm-fg2); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; display: block; }
+.plm-help-text { font-size: 10px; color: var(--plm-fg3); line-height: 1.5; }
+.plm-prompt-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; border: none; background: var(--plm-accent); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: inherit; white-space: nowrap; }
+.plm-prompt-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.plm-prompt-btn.secondary { background: var(--plm-bg3); color: var(--plm-fg2); border: 1px solid var(--plm-border); }
+.plm-prompt-btn.err { background: var(--plm-err); }
+.plm-btn-icon { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--plm-border); background: var(--plm-bg3); color: var(--plm-fg2); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.plm-btn-icon:hover { background: rgba(59,130,246,0.1); color: var(--plm-accent); }
+
+/* ─── Modal ─── */
+.plm-modal-overlay { font-family: 'Inter', system-ui, sans-serif; }
+
+/* ─── Progress Bar ─── */
+#plm-prog-bar { background: linear-gradient(90deg, #3b82f6, #8b5cf6) !important; }
+
+/* ─── Folder Panel ─── */
+#plm-folder-panel { position: fixed !important; top: 64px; left: 0; width: 240px; bottom: 0; background: var(--plm-glass); backdrop-filter: blur(20px); border-right: 1px solid var(--plm-border); z-index: 9999; display: flex; flex-direction: column; transform: translateX(-100%); transition: transform 0.3s ease; font-family: 'Inter', system-ui, sans-serif; }
+#plm-folder-panel.visible { transform: translateX(0) !important; }
+.plm-folder-header { padding: 14px 16px; border-bottom: 1px solid var(--plm-border); display: flex; align-items: center; justify-content: space-between; }
+.plm-folder-header h3 { font-size: 13px; font-weight: 700; color: var(--plm-fg); margin: 0; }
+.plm-folder-list { flex: 1; overflow-y: auto; padding: 8px; }
+.plm-folder-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all 0.15s; color: var(--plm-fg2); font-size: 12px; border: 2px solid transparent; }
+.plm-folder-item:hover { background: rgba(59,130,246,0.08); color: #fff; }
+.plm-folder-item.active { background: rgba(59,130,246,0.15); color: var(--plm-accent); border-color: rgba(59,130,246,0.3); }
+.plm-folder-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.plm-folder-count { font-size: 10px; padding: 1px 7px; border-radius: 999px; background: var(--plm-bg4); color: var(--plm-fg3); }
+.plm-folder-actions { padding: 10px 12px; border-top: 1px solid var(--plm-border); display: flex; gap: 6px; }
+.plm-btn { flex: 1; padding: 7px 8px; border-radius: 8px; border: 1px solid var(--plm-border); background: var(--plm-bg3); color: var(--plm-fg2); font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; text-align: center; font-family: inherit; }
+.plm-btn:hover { background: rgba(59,130,246,0.15); color: #fff; border-color: var(--plm-accent); }
+.plm-btn.primary { background: var(--plm-accent); color: #fff; border-color: var(--plm-accent); }
+
+/* ─── Prompt Bar ─── */
+#plm-prompt-bar { display: flex !important; align-items: center !important; gap: 8px !important; padding: 6px 12px !important; background: var(--plm-glass) !important; border-bottom: 1px solid var(--plm-border) !important; font-family: 'Inter', system-ui, sans-serif !important; }
+#plm-prompt-bar select { flex: 1; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--plm-border); background: var(--plm-bg); color: var(--plm-fg); font-size: 12px; outline: none; font-family: inherit; cursor: pointer; }
+
+/* ─── Studio Launcher ─── */
+#plm-studio-launcher { display: flex !important; }
+#plm-bulk-bar { display: flex !important; }
+#plm-export-bar { display: flex !important; }
+#plm-tag-bar { display: flex !important; }
+
+/* ─── Study Mode ─── */
+#plm-card-face { transition: all 0.3s ease; user-select: none; }
+#plm-card-face:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+
+/* ─── Toast ─── */
+#plm-toast-container { position: fixed !important; bottom: 20px !important; right: 20px !important; z-index: 100001 !important; display: flex !important; flex-direction: column !important; gap: 6px !important; font-family: 'Inter', system-ui, sans-serif !important; }
+
+/* ─── Animations ─── */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ─── Notebook drag state ─── */
+[data-plm-notebook] { cursor: grab !important; transition: all 0.15s !important; }
+[data-plm-notebook]:hover { box-shadow: 0 0 0 2px rgba(59,130,246,0.3) !important; }
+[data-plm-notebook].plm-dragging { opacity: 0.5 !important; cursor: grabbing !important; }
+
+/* ─── Filter Chips (Search) ─── */
+.plm-filter-chip { padding: 4px 12px; border-radius: 999px; border: 1px solid var(--plm-border); background: var(--plm-bg2); color: var(--plm-fg2); font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit; }
+.plm-filter-chip:hover { background: var(--plm-bg3); color: var(--plm-fg); }
+.plm-filter-chip.active { background: var(--plm-accent); color: #fff; border-color: var(--plm-accent); }
+
+/* ─── Language Widget ─── */
+#plm-lang-widget { position: fixed !important; bottom: 80px !important; right: 20px !important; z-index: 99998 !important; }
+#plm-lang-widget .plm-lang-toggle { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--plm-border); background: var(--plm-glass); backdrop-filter: blur(12px); color: var(--plm-fg); font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: 'Inter', system-ui, sans-serif; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+
+/* ─── Account Avatar Colors ─── */
+.plm-account-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+
+/* ─── Shortcode picker ─── */
+.plm-sc-item { transition: all 0.1s; }

@@ -1,0 +1,345 @@
+/**
+ * PipelineLM Pro — Local AI Analyzer
+ * Extracts topics, audience, and format suggestions from notebook content.
+ * Pure JavaScript — no external API required. Runs entirely in the browser.
+ */
+
+// ═══════════════════════════════════════════════════════════════
+//  CONTENT EXTRACTION — Scrape notebook page for context
+// ═══════════════════════════════════════════════════════════════
+
+export function extractNotebookContext() {
+  const ctx = {
+    notebookTitle: '',
+    sourceTitles: [],
+    sourceSnippets: [],
+    chatMessages: [],
+    keyTerms: [],
+    sourceTypes: [],
+    url: location.href
+  };
+
+  // 1. Notebook title
+  ctx.notebookTitle = document.querySelector('h1')?.textContent?.trim()
+    || document.querySelector('[data-testid*="title"]')?.textContent?.trim()
+    || document.querySelector('[class*="notebook-title"]')?.textContent?.trim()
+    || document.title?.replace(' - NotebookLM', '')
+    || '';
+
+  // 2. Source titles and types
+  document.querySelectorAll('[data-testid*="source"], [class*="source-item"], [class*="source-card"]').forEach(el => {
+    const title = el.querySelector('[class*="title"], [class*="name"]')?.textContent?.trim()
+      || el.textContent?.split('\n')[0]?.trim();
+    if(title && title.length > 2) ctx.sourceTitles.push(title);
+
+    // Detect source type from icon/text
+    const text = el.textContent.toLowerCase();
+    if(text.includes('.pdf') || text.includes('pdf')) ctx.sourceTypes.push('pdf');
+    else if(text.includes('youtube') || text.includes('youtu.be')) ctx.sourceTypes.push('video');
+    else if(text.includes('docs.google')) ctx.sourceTypes.push('gdoc');
+    else if(text.includes('http') || text.includes('article')) ctx.sourceTypes.push('web');
+    else if(text.includes('.mp3') || text.includes('.wav') || text.includes('audio')) ctx.sourceTypes.push('audio');
+    else ctx.sourceTypes.push('document');
+  });
+
+  // 3. Source snippets (first visible text block from each source card)
+  document.querySelectorAll('[data-testid*="source"], [class*="source-card"]').forEach(el => {
+    const snippet = Array.from(el.querySelectorAll('p, div'))
+      .map(p => p.textContent.trim())
+      .filter(t => t.length > 30 && t.length < 300)[0];
+    if(snippet) ctx.sourceSnippets.push(snippet);
+  });
+
+  // 4. Recent chat messages (user questions reveal intent)
+  document.querySelectorAll('[class*="message"], [class*="chat-turn"], [data-testid*="message"]').forEach(el => {
+    const text = el.textContent.trim();
+    if(text.length > 10 && text.length < 500) ctx.chatMessages.push(text);
+  });
+
+  // 5. Also grab any visible text from the main content area
+  const mainContent = document.querySelector('main, [class*="content"], [class*="notebook-content"]');
+  if(mainContent) {
+    const allText = mainContent.textContent;
+    // Extract capitalized phrases (likely key terms)
+    const capitalizedPhrases = allText.match(/\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){1,4}\b/g) || [];
+    ctx.keyTerms = [...new Set(capitalizedPhrases)].slice(0, 30);
+  }
+
+  return ctx;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TOPIC DETECTION — Extract main subject from content
+// ═══════════════════════════════════════════════════════════════
+
+export function detectTopic(ctx) {
+  const { notebookTitle, sourceTitles, chatMessages, keyTerms } = ctx;
+  const allText = [
+    notebookTitle,
+    ...sourceTitles,
+    ...chatMessages.slice(0, 5),
+    ...keyTerms.slice(0, 20)
+  ].join(' ').toLowerCase();
+
+  // Multi-word topic extraction — score phrase frequency
+  const phraseScores = {};
+
+  // Score notebook title heavily
+  if(notebookTitle) {
+    const cleanTitle = notebookTitle.replace(/[^\w\s]/g, '').trim();
+    phraseScores[cleanTitle] = (phraseScores[cleanTitle] || 0) + 20;
+  }
+
+  // Score source titles
+  sourceTitles.forEach(title => {
+    const clean = title.replace(/[^\w\s]/g, '').trim();
+    if(clean.length > 3 && clean.length < 80) {
+      phraseScores[clean] = (phraseScores[clean] || 0) + 10;
+    }
+  });
+
+  // Extract noun phrases from all text
+  const nounPhrasePattern = /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}\b/g;
+  const phrases = allText.match(nounPhrasePattern) || [];
+  phrases.forEach(p => {
+    if(p.length > 4 && p.length < 60 && !isStopWord(p)) {
+      phraseScores[p] = (phraseScores[p] || 0) + 3;
+    }
+  });
+
+  // Score individual important words
+  const words = allText.split(/\s+/).filter(w => w.length > 4 && !isStopWord(w));
+  const wordFreq = {};
+  words.forEach(w => { wordFreq[w] = (wordFreq[w] || 0) + 1; });
+  Object.entries(wordFreq).forEach(([word, count]) => {
+    if(count > 1) {
+      phraseScores[word] = (phraseScores[word] || 0) + count;
+    }
+  });
+
+  // Pick top-scoring phrase
+  const sorted = Object.entries(phraseScores)
+    .sort((a, b) => b[1] - a[1])
+    .filter(([phrase]) => phrase.length > 4);
+
+  if(sorted.length === 0) return { topic: '', confidence: 0 };
+
+  // If top phrase is very short, try to combine with 2nd best
+  let bestTopic = sorted[0][0];
+  const bestScore = sorted[0][1];
+
+  // Title case the topic
+  bestTopic = bestTopic.split(' ')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+
+  const maxScore = Math.max(...sorted.map(s => s[1]));
+  const confidence = Math.min(bestScore / maxScore, 1);
+
+  return { topic: bestTopic, confidence, alternatives: sorted.slice(1, 4).map(s => s[0]) };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AUDIENCE DETECTION — Infer target audience from content
+// ═══════════════════════════════════════════════════════════════
+
+export function detectAudience(ctx) {
+  const allText = [
+    ctx.notebookTitle,
+    ...ctx.sourceTitles,
+    ...ctx.chatMessages
+  ].join(' ').toLowerCase();
+
+  // Audience signal keywords
+  const audienceSignals = {
+    'Executives / Leadership': ['executive', 'ceo', 'leadership', 'board', 'stakeholder', 'strategic', 'roi', 'kpi', 'quarterly', 'investor'],
+    'Technical Engineers': ['api', 'code', 'developer', 'engineering', 'technical', 'implementation', 'architecture', 'deployment', 'github', 'programming'],
+    'Students / Academics': ['student', 'university', 'academic', 'research', 'study', 'thesis', 'dissertation', 'professor', 'course', 'lecture', 'exam'],
+    'Marketing Professionals': ['marketing', 'campaign', 'brand', 'audience', 'conversion', 'seo', 'content strategy', 'social media', 'lead generation'],
+    'Product Managers': ['product', 'roadmap', 'feature', 'user story', 'requirements', 'mvp', 'launch', 'pm', 'product manager'],
+    'General Public': ['beginner', 'introduction', 'overview', 'simple', 'easy', 'guide', 'tutorial', 'explainer']
+  };
+
+  const scores = {};
+  Object.entries(audienceSignals).forEach(([audience, keywords]) => {
+    scores[audience] = keywords.filter(kw => allText.includes(kw)).length;
+  });
+
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+
+  if(sorted[0][1] === 0) {
+    // Default based on content complexity
+    const avgSnippetLength = ctx.sourceSnippets.reduce((sum, s) => sum + s.length, 0) / (ctx.sourceSnippets.length || 1);
+    const sourceCount = ctx.sourceTitles.length;
+    if(avgSnippetLength > 200 && sourceCount > 5) return { audience: 'Researchers', confidence: 0.5 };
+    if(ctx.sourceTypes.includes('pdf') && ctx.sourceTypes.includes('gdoc')) return { audience: 'Team Members', confidence: 0.5 };
+    return { audience: 'General Audience', confidence: 0.3 };
+  }
+
+  return { audience: sorted[0][0], confidence: sorted[0][1] / 5 };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FORMAT SUGGESTION — Recommend best output type
+// ═══════════════════════════════════════════════════════════════
+
+export function suggestFormat(ctx) {
+  const { sourceTypes, sourceTitles, chatMessages } = ctx;
+
+  const scores = { audio: 0, video: 0, slide_deck: 0, report: 0, mind_map: 0 };
+
+  // Source type signals
+  if(sourceTypes.includes('video')) scores.video += 2;
+  if(sourceTypes.includes('audio')) scores.audio += 2;
+  if(sourceTypes.includes('pdf')) scores.report += 1;
+  if(sourceTitles.length > 5) scores.mind_map += 2; // Many sources = good for mind map
+  if(sourceTitles.length > 3) scores.slide_deck += 1;
+
+  // Chat message signals
+  const chatText = chatMessages.join(' ').toLowerCase();
+  if(chatText.includes('visual') || chatText.includes('diagram')) scores.mind_map += 2;
+  if(chatText.includes('present') || chatText.includes('slide') || chatText.includes('deck')) scores.slide_deck += 3;
+  if(chatText.includes('report') || chatText.includes('summary') || chatText.includes('brief')) scores.report += 2;
+  if(chatText.includes('audio') || chatText.includes('podcast') || chatText.includes('listen')) scores.audio += 3;
+  if(chatText.includes('video') || chatText.includes('visual')) scores.video += 2;
+
+  // Default: if few signals, suggest audio (most popular NotebookLM feature)
+  const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
+  if(totalScore === 0) scores.audio += 1;
+
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const formatLabels = {
+    audio: 'Audio Overview',
+    video: 'Video Overview',
+    slide_deck: 'Slide Deck',
+    report: 'Report / Briefing',
+    mind_map: 'Mind Map'
+  };
+
+  return {
+    primary: formatLabels[sorted[0][0]],
+    primaryId: sorted[0][0],
+    alternatives: sorted.slice(1, 3).map(([id]) => formatLabels[id]),
+    reasoning: generateReasoning(ctx, sorted[0][0])
+  };
+}
+
+function generateReasoning(ctx, formatId) {
+  const reasons = {
+    audio: `Your ${ctx.sourceTitles.length} sources contain ${ctx.sourceTypes.includes('audio') ? 'audio content that would work well as a podcast-style overview' : 'rich textual content ideal for a conversational deep-dive'}`,
+    video: 'Your sources contain visual and narrative content well-suited for video synthesis',
+    slide_deck: `With ${ctx.sourceTitles.length} sources, a structured presentation would help organize the key points`,
+    report: 'The depth and variety of your sources suggest a comprehensive written report would be most useful',
+    mind_map: `Multiple sources (${ctx.sourceTitles.length}) with overlapping themes are ideal for a visual mind map`
+  };
+  return reasons[formatId] || 'Based on your source content';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PROMPT SUGGESTION — Generate contextual prompt from analysis
+// ═══════════════════════════════════════════════════════════════
+
+export function generatePromptSuggestions(ctx) {
+  const topicResult = detectTopic(ctx);
+  const audienceResult = detectAudience(ctx);
+  const formatResult = suggestFormat(ctx);
+
+  const suggestions = [];
+
+  // 1. Topic-focused prompt
+  if(topicResult.topic) {
+    suggestions.push({
+      id: 'ai-topic-deep-dive',
+      name: 'Deep Dive: ' + topicResult.topic,
+      text: `Create a comprehensive deep-dive analysis of "${topicResult.topic}" for ${audienceResult.audience}. Cover the key aspects, controversies, and implications found across the ${ctx.sourceTitles.length} sources. Include specific examples and actionable insights.`,
+      confidence: topicResult.confidence,
+      reasoning: `Detected topic "${topicResult.topic}" from ${ctx.sourceTitles.length} sources with ${Math.round(topicResult.confidence * 100)}% confidence`
+    });
+  }
+
+  // 2. Summary prompt
+  suggestions.push({
+    id: 'ai-summary',
+    name: 'Executive Summary',
+    text: `Provide a concise executive summary synthesizing the key findings across all ${ctx.sourceTitles.length} sources. Target audience: ${audienceResult.audience}. Include strategic recommendations and next steps.`,
+    confidence: 0.8,
+    reasoning: `Always-applicable summary format for ${ctx.sourceTitles.length} sources`
+  });
+
+  // 3. Comparison prompt (if multiple sources)
+  if(ctx.sourceTitles.length >= 2) {
+    suggestions.push({
+      id: 'ai-compare',
+      name: 'Compare Sources',
+      text: `Compare and contrast the main viewpoints across ${ctx.sourceTitles.length} sources about "${topicResult.topic || 'this topic'}". Highlight agreements, disagreements, and gaps in the research for ${audienceResult.audience}.`,
+      confidence: 0.7,
+      reasoning: `${ctx.sourceTitles.length} sources detected — comparison analysis recommended`
+    });
+  }
+
+  // 4. Format-specific prompt
+  const formatPrompts = {
+    audio: `Create an engaging Audio Overview podcast episode about "${topicResult.topic || 'this topic'}" for ${audienceResult.audience}. Focus on the most interesting findings from the sources and present them as a conversational deep-dive.`,
+    video: `Create a Video Overview with visual explanations of "${topicResult.topic || 'this topic'}" for ${audienceResult.audience}. Use diagrams and key quotes from the sources to illustrate important points.`,
+    slide_deck: `Generate a Slide Deck presentation about "${topicResult.topic || 'this topic'}" for ${audienceResult.audience}. Structure it with an executive summary, key findings, data points, and actionable recommendations.`,
+    report: `Write a comprehensive report synthesizing "${topicResult.topic || 'this topic'}" from ${ctx.sourceTitles.length} sources. Target: ${audienceResult.audience}. Include methodology, findings, analysis, and recommendations.`,
+    mind_map: `Create a Mind Map visualizing the key concepts and relationships in "${topicResult.topic || 'this topic'}" based on the ${ctx.sourceTitles.length} sources. Organize themes, sub-topics, and connections.`
+  };
+
+  suggestions.push({
+    id: 'ai-format-specific',
+    name: formatResult.primary + ' Prompt',
+    text: formatPrompts[formatResult.primaryId] || formatPrompts.audio,
+    confidence: 0.75,
+    reasoning: formatResult.reasoning
+  });
+
+  // 5. FAQ prompt (if chat messages show Q&A pattern)
+  if(ctx.chatMessages.some(m => m.includes('?')) && ctx.chatMessages.length >= 2) {
+    suggestions.push({
+      id: 'ai-faq',
+      name: 'FAQ Generation',
+      text: `Based on the ${ctx.chatMessages.length} questions asked and ${ctx.sourceTitles.length} sources, generate a comprehensive FAQ document addressing the most common questions about "${topicResult.topic || 'this topic'}" for ${audienceResult.audience}.`,
+      confidence: 0.6,
+      reasoning: `${ctx.chatMessages.filter(m => m.includes('?')).length} questions detected in chat history`
+    });
+  }
+
+  return {
+    topic: topicResult,
+    audience: audienceResult,
+    format: formatResult,
+    suggestions: suggestions.sort((a, b) => b.confidence - a.confidence)
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+function isStopWord(phrase) {
+  const stopWords = new Set([
+    'about','above','across','after','against','along','among','around','before','behind',
+    'below','beneath','beside','between','beyond','during','except','inside','into','near',
+    'off','onto','outside','over','since','through','throughout','till','toward','under',
+    'until','upon','within','without','have','from','they','know','want','been','good',
+    'much','some','time','very','when','come','here','just','like','long','make','many',
+    'over','such','take','than','them','well','were','will','would','there','could','other',
+    'after','first','never','these','think','where','being','every','great','might','shall',
+    'still','those','while','this','that','with','have','from','they','know','want','been',
+    'good','much','some','time','very','when','come','here','just','like','long','make',
+    'many','over','such','take','than','them','well','were','will','would','there','could',
+    'other','after','first','never','these','think','where','being','every','great','might',
+    'shall','still','those','while','google','notebooklm','source','document','file',
+    'click','open','close','save','delete','create','add','remove','new','edit','view',
+    'page','home','menu','button','link','text','title','name','user','admin','info',
+    'data','list','item','card','panel','section','header','footer','body','content'
+  ]);
+  return phrase.split(' ').every(w => stopWords.has(w.toLowerCase()));
+}
+
+// Convenience: one-shot analysis
+export function analyzeNotebook() {
+  const ctx = extractNotebookContext();
+  return generatePromptSuggestions(ctx);
+}
