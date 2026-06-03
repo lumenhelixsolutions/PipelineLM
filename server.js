@@ -83,6 +83,25 @@ let activeJobs = new Map();
 
 // ─── Express Setup ───
 const app = express();
+
+// ─── Production Middleware ───
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Powered-By', 'PipelineLM Pro');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if(req.method === 'OPTIONS') return res.sendStatus(204);
+  const start = Date.now();
+  res.on('finish', () => {
+    const ms = Date.now() - start;
+    if(process.env.NODE_ENV !== 'test') {
+      console.log(`[${req.method}] ${req.originalUrl} → ${res.statusCode} (${ms}ms)`);
+    }
+  });
+  next();
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -1204,6 +1223,37 @@ setInterval(async () => {
 // ═══════════════════════════════════════════════════════════════
 
 const PORT = process.env.PORT || 8080;
+
+// ─── Process-level error handlers ───
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err.message);
+  console.error(err.stack);
+  logHealth('FATAL: ' + err.message);
+  // Graceful shutdown
+  server.close(() => process.exit(1));
+  setTimeout(() => process.exit(1), 5000);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL] Unhandled rejection:', reason?.message || reason);
+  logHealth('FATAL: Unhandled rejection');
+});
+
+// ─── Graceful shutdown ───
+function shutdown(signal) {
+  console.log(`[Server] Received ${signal}. Shutting down gracefully...`);
+  server.close(() => {
+    console.log('[Server] HTTP server closed');
+    process.exit(0);
+  });
+  setTimeout(() => {
+    console.error('[Server] Forced shutdown');
+    process.exit(1);
+  }, 10000);
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
 server.listen(PORT, () => {
   console.log(`[PipelineLM Pro] Fleet Orchestrator on http://localhost:${PORT}`);
   console.log(`[Server] WS + REST unified on port ${PORT}`);
