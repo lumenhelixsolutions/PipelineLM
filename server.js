@@ -136,10 +136,14 @@ async function getSdkClient() {
   if(!NotebookLMClient) throw new Error('notebooklm-sdk not installed. Run: npm install notebooklm-sdk');
   try {
     const Client = NotebookLMClient;
-    const client = new Client();
+    // First get auth tokens from the session file, then pass them to the client
+    const { connect } = require('notebooklm-sdk');
+    const tokens = await connect();
+    const client = new Client({ auth: tokens });
     const notebooks = await client.notebooks?.list?.();
     sdkClient = client;
     sdkAuthed = true;
+    logHealth('SDK authed: ' + (notebooks?.length || 0) + ' notebooks found');
     return sdkClient;
   } catch(e) {
     sdkAuthed = false;
