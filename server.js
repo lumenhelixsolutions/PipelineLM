@@ -935,31 +935,52 @@ app.post('/api/artifacts/:id/store', async (req, res) => {
                 artifact.type === 'mind_map' ? '.json' : '.mp3';
     const localPath = path.join(typeDir, `${safeName}_${artifact.id.slice(0,6)}${ext}`);
 
-    // Try to download from NotebookLM
-    try {
-      const client = await getSdkClient();
-      const downloadFn = client.artifacts?.download || client.artifacts?.downloadAudio;
-      if(typeof downloadFn === 'function' && artifact.source === 'api') {
-        const stream = await downloadFn.call(client.artifacts, artifact.id);
-        if(stream && stream.pipe) {
-          const writeStream = fs.createWriteStream(localPath);
-          stream.pipe(writeStream);
-          await new Promise((resolve, reject) => {
-            writeStream.on('finish', resolve);
-            writeStream.on('error', reject);
-          });
+    // Use content from request body if provided
+    const content = req.body?.content;
+    let metadata = req.body?.metadata || {};
+    // Handle stringified JSON metadata
+    if(typeof metadata === 'string') {
+      try { metadata = JSON.parse(metadata); } catch(e) { metadata = { raw: metadata }; }
+    }
+
+    if(content) {
+      // Write actual content from the request
+      fs.writeFileSync(localPath, content, 'utf-8');
+      console.log(`[Store] Wrote content (${content.length} chars) → ${localPath}`);
+    } else {
+      // Try to download from NotebookLM SDK
+      try {
+        const client = await getSdkClient();
+        const downloadFn = client.artifacts?.download || client.artifacts?.downloadAudio;
+        if(typeof downloadFn === 'function' && artifact.source === 'api') {
+          const stream = await downloadFn.call(client.artifacts, artifact.id);
+          if(stream && stream.pipe) {
+            const writeStream = fs.createWriteStream(localPath);
+            stream.pipe(writeStream);
+            await new Promise((resolve, reject) => {
+              writeStream.on('finish', resolve);
+              writeStream.on('error', reject);
+            });
+          }
         }
+      } catch(e) {
+        console.warn('[Store] Download failed, creating placeholder:', e.message);
+        const placeholder = {
+          title: artifact.title || '',
+          type: artifact.type || '',
+          prompt: artifact.prompt || '',
+          metadata,
+          createdAt: artifact.createdAt || new Date().toISOString(),
+          source: artifact.source || 'manual',
+          note: 'Placeholder — use POST with { content: "..." } to store real content'
+        };
+        fs.writeFileSync(localPath, JSON.stringify(placeholder, null, 2), 'utf-8');
       }
-    } catch(e) {
-      console.warn('[Store] Download failed, creating placeholder:', e.message);
-      fs.writeFileSync(localPath, JSON.stringify({
-        title: artifact.title,
-        type: artifact.type,
-        prompt: artifact.prompt,
-        createdAt: artifact.createdAt,
-        source: artifact.source,
-        note: 'Placeholder - download the actual file from NotebookLM Studio'
-      }, null, 2));
+    }
+
+    // Also persist metadata if provided
+    if(metadata && Object.keys(metadata).length > 0) {
+      artifact.metadata = { ...(artifact.metadata || {}), ...metadata };
     }
 
     artifact.localPath = localPath;
@@ -1047,14 +1068,15 @@ app.post('/api/artifacts/bulk-store', async (req, res) => {
 
 // ─── Re-render artifact ───
 app.post('/api/artifacts/:id/rerender', async (req, res) => {
-  const artifacts = loadJSON(ARTIFACTS_FILE, []);
-  const artifact = artifacts.find(a => a.id === req.params.id);
-  if(!artifact) return res.status(404).json({ error: 'Artifact not found' });
+  try {
+    const artifacts = loadJSON(ARTIFACTS_FILE, []);
+    const artifact = artifacts.find(a => a.id === req.params.id);
+    if(!artifact) return res.status(404).json({ error: 'Artifact not found' });
 
-  // Find original prefab
-  const prefabs = getEmbeddedPrefabs();
-  let prefab = prefabs.find(p => artifact.type === p.type);
-  if(!prefab) prefab = prefabs[0];
+    // Find original prefab
+    const prefabs = getEmbeddedPrefabs();
+    let prefab = prefabs.find(p => artifact.type === p.type);
+    if(!prefab) prefab = prefabs[0];
 
   // Create a new job from the artifact
   const jobReq = {
@@ -1101,26 +1123,35 @@ app.post('/api/artifacts/:id/rerender', async (req, res) => {
   } catch(e) {
     console.error('[Rerender Error]', e);
   }
+  } catch(e) {
+    console.error('[Rerender Outer Error]', e);
+    if(!res.headersSent) res.status(500).json({ error: 'Rerender failed', detail: e.message });
+  }
 });
 
 // ─── Download artifact ───
 app.get('/api/artifacts/:id/download', async (req, res) => {
-  const artifacts = loadJSON(ARTIFACTS_FILE, []);
-  const artifact = artifacts.find(a => a.id === req.params.id);
-  if(!artifact) return res.status(404).json({ error: 'Artifact not found' });
+  try {
+    const artifacts = loadJSON(ARTIFACTS_FILE, []);
+    const artifact = artifacts.find(a => a.id === req.params.id);
+    if(!artifact) return res.status(404).json({ error: 'Artifact not found' });
 
-  // If stored locally, serve the file
-  if(artifact.localPath && fs.existsSync(artifact.localPath)) {
-    return res.download(artifact.localPath, path.basename(artifact.localPath));
+    // If stored locally, serve the file
+    if(artifact.localPath && fs.existsSync(artifact.localPath)) {
+      return res.download(artifact.localPath, path.basename(artifact.localPath));
+    }
+
+    // If there's a downloadUrl, redirect to it
+    if(artifact.downloadUrl) {
+      return res.redirect(artifact.downloadUrl);
+    }
+
+    // Otherwise return artifact metadata as JSON
+    res.json({ title: artifact.title, type: artifact.type, prompt: artifact.prompt, note: 'No downloadable file available. Use Store to save locally.' });
+  } catch(e) {
+    console.error('[Download Error]', e.message);
+    res.status(500).json({ error: 'Download failed', detail: e.message });
   }
-
-  // If there's a downloadUrl, redirect to it
-  if(artifact.downloadUrl) {
-    return res.redirect(artifact.downloadUrl);
-  }
-
-  // Otherwise return artifact metadata as JSON
-  res.json({ title: artifact.title, type: artifact.type, prompt: artifact.prompt, note: 'No downloadable file available. Use Store to save locally.' });
 });
 
 // ─── Delete single artifact ───
