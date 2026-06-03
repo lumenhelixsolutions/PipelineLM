@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PipelineLM Pro</title>
+<link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-brand"><span class="logo">&#9889;</span><span>PipelineLM Pro</span></div>
+    <div class="header-actions">
+      <button class="btn ghost sm" id="btn-sync-h" title="Sync">&#x21bb;</button>
+      <button class="btn ghost sm" id="btn-settings" title="Settings">&#x2699;</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="dash">&#128202; Dashboard</button>
+    <button class="tab" data-tab="vault">&#128230; Vault</button>
+    <button class="tab" data-tab="pipeline">&#128640; Pipeline</button>
+    <button class="tab" data-tab="storage">&#128193; Storage</button>
+  </div>
+
+  <!-- DASHBOARD TAB -->
+  <div class="tab-panel active" id="tab-dash">
+    <div class="dash-stats">
+      <div class="stat-card"><div class="stat-icon" style="color:#3b82f6">&#128230;</div><div class="stat-num" id="st-total">0</div><div class="stat-label">Total Artifacts</div></div>
+      <div class="stat-card"><div class="stat-icon" style="color:#10b981">&#128190;</div><div class="stat-num" id="st-stored">0</div><div class="stat-label">Stored Locally</div></div>
+      <div class="stat-card"><div class="stat-icon" style="color:#f59e0b">&#9889;</div><div class="stat-num" id="st-gen">0</div><div class="stat-label">Generating</div></div>
+      <div class="stat-card"><div class="stat-icon" style="color:#8b5cf6">&#128218;</div><div class="stat-num" id="st-nb">0</div><div class="stat-label">Notebooks</div></div>
+    </div>
+    <div class="section-header">Recent Artifacts</div>
+    <div class="recent-list" id="recent-list">
+      <div class="empty" style="padding:20px"><div class="empty-icon">&#128229;</div><div class="empty-title">No artifacts yet</div><div class="empty-desc">Open notebooklm.google.com and click Sync</div></div>
+    </div>
+    <div class="section-header">My Notebooks</div>
+    <div class="nb-list" id="dash-nb-list">
+      <div class="empty" style="padding:16px"><div class="empty-desc">Visit notebooklm.google.com to discover your notebooks</div></div>
+    </div>
+  </div>
+
+  <!-- VAULT TAB -->
+  <div class="tab-panel" id="tab-vault">
+    <div class="controls">
+      <div class="notebook-row">
+        <select class="notebook-select" id="nb-sel"><option value="">All Notebooks</option></select>
+        <button class="btn primary sm" id="btn-sync">Sync</button>
+      </div>
+    </div>
+    <div class="chips" id="chips">
+      <button class="chip active" data-filter="all">All <span id="c-all">0</span></button>
+      <button class="chip" data-filter="audio">&#127909; <span id="c-audio">0</span></button>
+      <button class="chip" data-filter="video">&#127916; <span id="c-video">0</span></button>
+      <button class="chip" data-filter="slide_deck">&#128193; <span id="c-slide">0</span></button>
+      <button class="chip" data-filter="mind_map">&#129504; <span id="c-map">0</span></button>
+      <button class="chip" data-filter="report">&#128202; <span id="c-report">0</span></button>
+    </div>
+    <div class="vault" id="vault">
+      <div class="empty" id="vault-empty">
+        <div class="empty-icon">&#128229;</div>
+        <div class="empty-title">No artifacts yet</div>
+        <div class="empty-desc">Open notebooklm.google.com and click Sync</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE TAB -->
+  <div class="tab-panel" id="tab-pipeline">
+    <div class="pipeline-cols">
+      <div class="pipe-col">
+        <div class="pipe-header"><span>&#9889; Generating</span><span class="pipe-count" id="pipe-gen">0</span></div>
+        <div class="pipe-body" id="pipe-gen-body"></div>
+      </div>
+      <div class="pipe-col">
+        <div class="pipe-header" style="border-color:var(--ok)"><span>&#10003; Completed</span><span class="pipe-count" id="pipe-comp">0</span></div>
+        <div class="pipe-body" id="pipe-comp-body"></div>
+      </div>
+      <div class="pipe-col">
+        <div class="pipe-header" style="border-color:var(--err)"><span>&#10005; Failed</span><span class="pipe-count" id="pipe-fail">0</span></div>
+        <div class="pipe-body" id="pipe-fail-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORAGE TAB -->
+  <div class="tab-panel" id="tab-storage">
+    <div class="storage-section">
+      <div class="storage-bar-outer"><div class="storage-bar-inner" id="storage-bar" style="width:0%"></div></div>
+      <div class="storage-labels"><span id="storage-used">0 files</span><span>vault-storage/</span></div>
+    </div>
+    <div class="section-header">Local Files</div>
+    <div class="file-list" id="file-list">
+      <div class="empty" style="padding:20px"><div class="empty-icon">&#128193;</div><div class="empty-title">No local files</div><div class="empty-desc">Store artifacts to download them to vault-storage/</div></div>
+    </div>
+  </div>
+
+  <!-- Inspector -->
+  <div class="inspector" id="inspector">
+    <div class="inspector-toggle" id="ins-toggle"><span>&#128203; Inspector</span><span style="color:var(--fg3);font-size:10px">&#9660;</span></div>
+    <div class="inspector-body" id="ins-body"></div>
+    <div class="inspector-actions" id="ins-actions"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-settings">
+  <div class="modal">
+    <div class="modal-header"><span>Settings</span><button class="btn ghost sm" id="btn-close">&times;</button></div>
+    <div class="modal-body">
+      <div class="m-row"><div class="m-label">License Key</div><input class="m-input" id="s-lic" placeholder="PLM-XXXX-XXXX" /></div>
+      <div class="m-row"><label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--fg2);cursor:pointer"><input type="checkbox" id="s-sync" checked style="accent-color:var(--accent)" /> Auto-detect new artifacts</label></div>
+    </div>
+    <div class="modal-footer"><button class="btn" id="btn-cancel">Cancel</button><button class="btn primary" id="btn-save">Save</button></div>
+  </div>
+</div>
+<div class="toast-container" id="toasts"></div>
+<script type="module" src="sidepanel.js"></script>
+</body>
+</html>

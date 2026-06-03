@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Welcome - PipelineLM Pro</title>
+<style>
+:root{--bg:#0a0e17;--bg2:#111827;--bg3:#1a2236;--fg:#e2e8f0;--fg2:#94a3b8;--fg3:#64748b;--accent:#3b82f6;--border:rgba(255,255,255,0.06);--r:10px;--f:Inter,system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:var(--f);background:var(--bg);color:var(--fg);height:100vh;display:flex;flex-direction:column;font-size:13px}
+.bar{height:3px;background:var(--bg3);flex-shrink:0}.bar-fill{height:100%;background:var(--accent);transition:width .3s}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;animation:fade .2s ease-out}
+.slide:first-child{display:flex}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.slide-icon{font-size:48px;margin-bottom:16px}
+.slide h2{font-size:18px;font-weight:700;margin-bottom:8px}
+.slide p{color:var(--fg2);font-size:13px;max-width:280px;line-height:1.6;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:280px;width:100%;margin-bottom:20px}
+.cell{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px;text-align:center;font-size:11px;color:var(--fg2)}
+.cell span{display:block;font-size:20px;margin-bottom:4px}
+.pgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;max-width:280px;width:100%;margin-bottom:20px}
+.pf{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 4px;text-align:center;font-size:10px;color:var(--fg2)}
+.pf span{display:block;font-size:20px;margin-bottom:3px}
+.row{display:flex;gap:6px;max-width:280px;width:100%;margin-bottom:8px}
+.row input{flex:1;padding:8px 10px;border-radius:var(--r);border:1px solid var(--border);background:var(--bg3);color:var(--fg);font-size:12px;font-family:inherit;outline:none}
+.note{font-size:10px;color:var(--fg3);max-width:280px}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-top:1px solid var(--border);flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);border:1px solid var(--border);background:var(--bg3);color:var(--fg);font-size:12px;font-weight:500;font-family:inherit;cursor:pointer}
+.btn:hover{background:var(--fg3);color:#fff}.btn:disabled{opacity:.3;cursor:not-allowed}
+.btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+.dots{display:flex;gap:6px;position:absolute;bottom:20px;left:50%;transform:translateX(-50%)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--fg3);cursor:pointer}.dot.a{background:var(--accent);width:18px;border-radius:3px}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="bar"><div class="bar-fill" id="bar" style="width:20%"></div></div>
+<div class="slides" id="slides">
+  <div class="slide" data-i="0"><div class="slide-icon">&#9889;</div><h2>Welcome to PipelineLM Pro</h2><p>Your NotebookLM media studio. Manage audio, video, slides, and more across all notebooks.</p><div class="grid"><div class="cell"><span>&#127909;</span>Auto-detect</div><div class="cell"><span>&#128229;</span>One-click store</div><div class="cell"><span>&#9889;</span>Prefab inject</div><div class="cell"><span>&#128193;</span>Offline vault</div></div></div>
+  <div class="slide" data-i="1"><div class="slide-icon">&#128302;</div><h2>How It Works</h2><p>While you work in NotebookLM, PipelineLM watches for new artifacts and catalogs them.</p><div class="grid"><div class="cell"><span>1</span>Open NotebookLM</div><div class="cell"><span>2</span>Generate content</div><div class="cell"><span>3</span>Click Sync</div><div class="cell"><span>4</span>Store & manage</div></div></div>
+  <div class="slide" data-i="2"><div class="slide-icon">&#128218;</div><h2>Prefab Templates</h2><p>Pick a template, enter your topic and audience, and generate structured content.</p><div class="pgrid"><div class="pf"><span>&#127909;</span>Deep-Dive</div><div class="pf"><span>&#128202;</span>Brief</div><div class="pf"><span>&#127916;</span>Video</div><div class="pf"><span>&#128193;</span>Slides</div><div class="pf"><span>&#129504;</span>Mind Map</div><div class="pf"><span>&#127891;</span>Tutorial</div></div></div>
+  <div class="slide" data-i="3"><div class="slide-icon">&#11088;</div><h2>Go Pro</h2><p>Free: 2 prefabs + manual sync. Pro: all 6 prefabs + auto-detect + full inspector.</p><div class="row"><input type="text" id="lic" placeholder="PLM-XXXX-XXXX" /><button class="btn pri" id="btn-act">Activate</button></div><div class="note">Skip this to start free. Upgrade anytime in Settings.</div></div>
+  <div class="slide" data-i="4"><div class="slide-icon">&#127881;</div><h2>You're Ready</h2><p>Head to notebooklm.google.com, generate content, then hit Sync.</p><button class="btn pri" id="btn-start" style="padding:10px 24px;font-size:14px">&#9889; Open PipelineLM</button></div>
+</div>
+<div class="nav">
+  <button class="btn" id="prev" disabled>Back</button>
+  <div class="dots" id="dots"></div>
+  <button class="btn pri" id="next">Next</button>
+</div>
+<script src="onboard.js"></script>
+</body>
+</html>

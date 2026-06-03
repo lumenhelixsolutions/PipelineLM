@@ -1,0 +1,6 @@
+export function generateId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
+export function escapeHtml(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+export function formatDate(d){if(!d)return'-';const n=new Date(d);if(isNaN(n))return'-';const diff=(Date.now()-n)/1000;if(diff<60)return'now';if(diff<3600)return Math.floor(diff/60)+'m ago';if(diff<86400)return Math.floor(diff/3600)+'h ago';if(diff<604800)return Math.floor(diff/86400)+'d ago';return n.toLocaleDateString();}
+export function formatBytes(b){if(!b)return'0 B';const u=['B','KB','MB','GB'];let i=0,s=b;while(s>=1024&&i<u.length-1){s/=1024;i++;}return s.toFixed(1)+' '+u[i];}
+export function hashId(str){let h=0;for(let i=0;i<str.length;i++)h=((h<<5)-h+str.charCodeAt(i))|0;return Math.abs(h).toString(36).slice(0,8);}
+export function truncatePrompt(tpl,topic,audience){let p=tpl.replace(/{topic}/g,topic).replace(/{audience}/g,audience);return p.length>10000?p.slice(0,10000):p;}
