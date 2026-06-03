@@ -137,15 +137,19 @@ async function getSdkClient() {
   try {
     const Client = NotebookLMClient;
     const client = new Client();
-    // Test with a lightweight call
-    await client.notebooks?.list?.();
+    const notebooks = await client.notebooks?.list?.();
     sdkClient = client;
     sdkAuthed = true;
     return sdkClient;
   } catch(e) {
     sdkAuthed = false;
     sdkClient = null;
-    throw new Error('SDK auth failed: ' + e.message);
+    const msg = e.message || String(e);
+    // Provide clear guidance based on error type
+    if(msg.includes('SNlM0e') || msg.includes('CSRF') || msg.includes('auth') || msg.includes('login')) {
+      throw new Error('NotebookLM session expired or invalid. Run: npx notebooklm-sdk login');
+    }
+    throw new Error('SDK auth failed: ' + msg);
   }
 }
 
