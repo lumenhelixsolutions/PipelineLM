@@ -38,6 +38,21 @@ function renderDashboard(){
   if(el('st-gen'))el('st-gen').textContent=gen;
   if(el('st-nb'))el('st-nb').textContent=nb;
 
+  // Server connection check
+  const serverStatus = el('server-status');
+  if(serverStatus) {
+    const url = settings.serverUrl || 'http://localhost:8080';
+    fetch(url + '/api/status')
+      .then(r => r.json())
+      .then(s => {
+        serverStatus.innerHTML = `<span class="badge ok">● Server Online</span> <span class="small">v${s.sdkVersion}</span>`;
+        serverStatus.onclick = () => chrome.tabs.create({ url: url });
+      })
+      .catch(() => {
+        serverStatus.innerHTML = `<span class="badge err">● Server Offline</span> <span class="small">${url}</span>`;
+      });
+  }
+
   // Recent artifacts (last 10)
   const recent=el('recent-list');
   if(!recent)return;
