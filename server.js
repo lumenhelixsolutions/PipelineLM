@@ -105,6 +105,22 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// ─── Error logging middleware (catches uncaught errors from routes) ───
+app.use((err, req, res, next) => {
+  if(!err) return next();
+  const msg = err?.message || String(err);
+  const stack = err?.stack?.split('\n').slice(0,3).join('\n') || '';
+  console.error(`[Uncaught] ${req.method} ${req.originalUrl}: ${msg}\n${stack}`);
+  logHealth(`ERROR: ${msg}`);
+  if(!res.headersSent) {
+    res.status(err.statusCode || 500).json({
+      error: msg,
+      requestId: Date.now().toString(36),
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // ─── Static files ───
 // Serve public/ directory first
 if(fs.existsSync(PUBLIC_DIR)) {
@@ -129,6 +145,25 @@ function broadcast(msg) {
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+}
+
+// ─── Request validation helper ───
+function requireFields(body, fields) {
+  const missing = fields.filter(f => body[f] === undefined || body[f] === null || body[f] === '');
+  if(missing.length > 0) {
+    const err = new Error('Missing required fields: ' + missing.join(', '));
+    err.statusCode = 400;
+    err.missing = missing;
+    throw err;
+  }
+}
+
+function sendError(res, err, defaultMsg = 'Internal error') {
+  const msg = err?.message || defaultMsg;
+  const code = err?.statusCode || 500;
+  if(code >= 500) console.error('[Error]', msg, err?.stack ? '\n' + err.stack.split('\n').slice(0,3).join('\n') : '');
+  else console.warn('[Warn]', msg);
+  res.status(code).json({ error: msg });
 }
 
 async function getSdkClient() {
@@ -179,6 +214,28 @@ app.get('/api/status', (req, res) => {
     queue: globalQueue.length,
     platform: os.platform(),
     healthLog: healthLog.slice(0, 10),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ─── Detailed Health ───
+app.get('/api/health', (req, res) => {
+  const dataDirOk = fs.existsSync(DATA_DIR) && fs.existsSync(VAULT_DIR);
+  const vaultFiles = (() => { try { const total = []; const types = fs.readdirSync(VAULT_DIR).filter(f => fs.statSync(path.join(VAULT_DIR, f)).isDirectory()); for(const t of types) total.push(...fs.readdirSync(path.join(VAULT_DIR, t))); return total.length; } catch(e) { return -1; } })();
+  const memory = process.memoryUsage();
+  const uptime = process.uptime();
+
+  res.json({
+    status: 'healthy',
+    uptime: Math.floor(uptime) + 's',
+    version: '1.0.0',
+    sdk: { installed: !!NotebookLMClient, authed: sdkAuthed },
+    directories: { data: path.basename(DATA_DIR), vault: path.basename(VAULT_DIR), ok: dataDirOk },
+    vault: { totalFiles: vaultFiles },
+    data: { projects: loadJSON(PROJECTS_FILE, []).length, artifacts: loadJSON(ARTIFACTS_FILE, []).length, queue: globalQueue.length },
+    memory: { rss: Math.round(memory.rss / 1024 / 1024) + 'MB', heap: Math.round(memory.heapUsed / 1024 / 1024) + 'MB' },
+    wsClients: wsClients.size,
+    errorCount: healthLog.filter(e => e.msg.startsWith('FATAL') || e.msg.startsWith('ERROR')).length,
     timestamp: new Date().toISOString()
   });
 });
@@ -244,19 +301,22 @@ function getEmbeddedPrefabs() {
 // ─── Fleet ───
 app.get('/api/fleet', async (req, res) => {
   try {
-    const client = await getSdkClient();
-    const notebooks = await client.notebooks?.list?.() || [];
-    notebookInventory = notebooks.map(n => ({
-      id: n.id || n.notebookId || generateId(),
-      title: n.title || 'Untitled',
-      sourceCount: n.sourceCount || n.sources?.length || 0,
-      updatedAt: n.updatedAt || new Date().toISOString()
-    }));
-    logHealth(`Fleet synced: ${notebookInventory.length} notebooks`);
+    if(sdkAuthed && sdkClient) {
+      const client = sdkClient;
+      const notebooks = await client.notebooks?.list?.() || [];
+      notebookInventory = notebooks.map(n => ({
+        id: n.id || n.notebookId || generateId(),
+        title: n.title || n.name || 'Untitled',
+        updatedAt: n.updatedAt || n.modifiedAt || new Date().toISOString(),
+        artifactCount: n.artifactCount || 0,
+        source: 'sdk'
+      }));
+    }
+    // Return cached inventory (may be empty if SDK not authed)
     res.json(notebookInventory);
   } catch(e) {
-    console.error('[Fleet Error]', e.message);
-    res.status(503).json({ error: 'SDK not authenticated', detail: e.message, notebooks: [] });
+    console.warn('[Fleet] SDK not available, returning cached:', e.message);
+    res.json(notebookInventory);  // Return what we have
   }
 });
 
@@ -296,12 +356,66 @@ app.put('/api/projects/:id', (req, res) => {
 
 app.delete('/api/projects/:id', (req, res) => {
   let projects = loadJSON(PROJECTS_FILE, []);
-  const before = projects.length;
+  const project = projects.find(p => p.id === req.params.id);
+  if(!project) return res.status(404).json({ error: 'Project not found' });
+  
+  // Cascade: remove associated artifacts and queue jobs
+  let artifacts = loadJSON(ARTIFACTS_FILE, []);
+  const removedArtifacts = artifacts.filter(a => a.projectId === req.params.id);
+  artifacts = artifacts.filter(a => a.projectId !== req.params.id);
+  if(removedArtifacts.length > 0) {
+    // Clean up local files
+    for(const a of removedArtifacts) {
+      if(a.localPath && fs.existsSync(a.localPath)) {
+        try { fs.unlinkSync(a.localPath); } catch(e) {}
+      }
+    }
+    saveJSON(ARTIFACTS_FILE, artifacts);
+    logHealth(`Cascade deleted ${removedArtifacts.length} artifacts for project ${req.params.id}`);
+  }
+  
+  // Cascade: remove associated queue jobs
+  globalQueue = globalQueue.filter(j => j.projectId !== req.params.id);
+  saveJSON(QUEUE_FILE, globalQueue);
+  
+  // Remove project
   projects = projects.filter(p => p.id !== req.params.id);
-  if(projects.length === before) return res.status(404).json({ error: 'Project not found' });
   saveJSON(PROJECTS_FILE, projects);
-  broadcast({ type: 'project-deleted', id: req.params.id });
-  res.json({ success: true });
+  
+  broadcast({ type: 'project-deleted', id: req.params.id, cascaded: removedArtifacts.length });
+  res.json({ success: true, cascadedArtifacts: removedArtifacts.length, cascadedJobs: 0 });
+});
+
+// ─── Reset demo data (clears projects, artifacts, queue, keeps vault) ───
+app.post('/api/reset', (req, res) => {
+  try {
+    const { keepVault } = req.body || {};
+    const before = { projects: loadJSON(PROJECTS_FILE, []).length, artifacts: loadJSON(ARTIFACTS_FILE, []).length, queue: globalQueue.length };
+
+    saveJSON(PROJECTS_FILE, []);
+    saveJSON(ARTIFACTS_FILE, []);
+    saveJSON(QUEUE_FILE, []);
+    globalQueue = [];
+    notebookInventory = [];
+    activeJobs.clear();
+    sdkAuthed = false;
+    sdkClient = null;
+
+    if(!keepVault) {
+      // Wipe vault files
+      const types = fs.readdirSync(VAULT_DIR).filter(f => fs.statSync(path.join(VAULT_DIR, f)).isDirectory());
+      for(const t of types) {
+        const dir = path.join(VAULT_DIR, t);
+        const files = fs.readdirSync(dir);
+        for(const f of files) fs.unlinkSync(path.join(dir, f));
+      }
+    }
+
+    logHealth(`Data reset: cleared ${before.projects} projects, ${before.artifacts} artifacts, ${before.queue} jobs${keepVault ? ' (kept vault)' : ''}`);
+    res.json({ success: true, cleared: before, keepVault: !!keepVault });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ─── Generate / Pipeline ───
@@ -867,6 +981,8 @@ app.post('/api/vault/store', async (req, res) => {
     // Mark as stored
     artifact.localPath = localPath;
     artifact.status = 'stored';
+    artifact.storedAt = new Date().toISOString();
+    artifact.localSize = fs.existsSync(localPath) ? fs.statSync(localPath).size : 0;
     saveJSON(ARTIFACTS_FILE, artifacts);
     broadcast({ type: 'artifact-stored', artifact });
     res.json({ success: true, path: localPath });
@@ -984,6 +1100,7 @@ app.post('/api/artifacts/:id/store', async (req, res) => {
     }
 
     artifact.localPath = localPath;
+    artifact.storedAt = new Date().toISOString();
     artifact.localSize = fs.existsSync(localPath) ? fs.statSync(localPath).size : 0;
     artifacts[idx] = artifact;
     saveJSON(ARTIFACTS_FILE, artifacts);

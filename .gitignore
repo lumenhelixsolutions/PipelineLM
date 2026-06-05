@@ -3,3 +3,5 @@ node_modules/
 vault-storage/
 *.zip
 .DS_Store
+config.toml
+[providers.local-ollama].txt
