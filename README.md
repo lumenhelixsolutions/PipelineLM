@@ -33,8 +33,6 @@ PipelineLM is the Chrome extension power-suite for Google NotebookLM. It injects
 ```bash
 git clone https://github.com/lumenhelixsolutions/PipelineLM.git
 cd PipelineLM
-git clone https://github.com/lumenhelixsolutions/PipelineLM.git
-cd PipelineLM
 npm install
 npm run build
 # Load dist/ as an unpacked extension in chrome://extensions
@@ -45,8 +43,6 @@ npm run build
 ```powershell
 git clone https://github.com/lumenhelixsolutions/PipelineLM.git
 Set-Location PipelineLM
-git clone https://github.com/lumenhelixsolutions/PipelineLM.git
-Set-Location PipelineLM
 npm install
 npm run build
 # Load dist/ as an unpacked extension in chrome://extensions
@@ -55,8 +51,6 @@ npm run build
 ### Windows (Git Bash / WSL)
 
 ```bash
-git clone https://github.com/lumenhelixsolutions/PipelineLM.git
-cd PipelineLM
 git clone https://github.com/lumenhelixsolutions/PipelineLM.git
 cd PipelineLM
 npm install
