@@ -1,7 +1,11 @@
 # PipelineLM
 
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="PipelineLM logo" width="160">
+  <img src="docs/assets/hero.svg" alt="PipelineLM header" width="100%">
+</p>
+
+<p align="center">
+  <img src="docs/assets/logo.svg" alt="PipelineLM logo" width="120">
 </p>
 
 <h3 align="center">Capture. Organize. Export.</h3>
@@ -9,9 +13,9 @@
 <p align="center">Chrome extension power-suite for Google NotebookLM.</p>
 
 <p align="center">
-  <a href="https://lumenhelixsolutions.github.io/PipelineLM/">Launch Page</a>
+  <a href="https://lumenhelixlab.github.io/PipelineLM/">Launch Page</a>
   <span> · </span>
-  <a href="https://github.com/lumenhelixsolutions/PipelineLM">GitHub</a>
+  <a href="https://github.com/lumenhelixlab/PipelineLM">GitHub</a>
   <span> · </span>
   <a href="https://lumenhelix.com">LumenHelix</a>
 </p>
@@ -31,7 +35,7 @@ PipelineLM is the Chrome extension power-suite for Google NotebookLM. It injects
 ### macOS / Linux
 
 ```bash
-git clone https://github.com/lumenhelixsolutions/PipelineLM.git
+git clone https://github.com/lumenhelixlab/PipelineLM.git
 cd PipelineLM
 npm install
 npm run build
@@ -41,7 +45,7 @@ npm run build
 ### Windows (PowerShell)
 
 ```powershell
-git clone https://github.com/lumenhelixsolutions/PipelineLM.git
+git clone https://github.com/lumenhelixlab/PipelineLM.git
 Set-Location PipelineLM
 npm install
 npm run build
@@ -51,7 +55,7 @@ npm run build
 ### Windows (Git Bash / WSL)
 
 ```bash
-git clone https://github.com/lumenhelixsolutions/PipelineLM.git
+git clone https://github.com/lumenhelixlab/PipelineLM.git
 cd PipelineLM
 npm install
 npm run build
